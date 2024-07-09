@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import com.ecommerce.entity.Product;
 import com.ecommerce.entity.Roles;
 import com.ecommerce.entity.User;
+import com.ecommerce.enums.AppConstants;
+import com.ecommerce.exceptions.ExistingProductFound;
 import com.ecommerce.exceptions.ResourceNotFoundException;
 import com.ecommerce.exceptions.UserNotFoundException;
 import com.ecommerce.payload.UserDto;
@@ -39,13 +41,13 @@ public class UserServiceImpl implements UserService {
 	private ModelMapper modelMapper;
 
 	@Override
-	public UserDto createUserOrUpdateUser(UserDto userDto) {
+	public UserDto createUserOrUpdateUser(UserDto userDto,AppConstants createOrUpdate) {
 
 		if (userDto.getId() != null) {
 
 			Optional<User> optionalUser = this.userRepo.findById(userDto.getId());
 			User updateUser = new User();
-			if (optionalUser.isPresent()) {
+			if (optionalUser.isPresent() && createOrUpdate.toString().equalsIgnoreCase("update")) {
 				User users = optionalUser.get();
 				users.setEmail(userDto.getEmail());
 				users.setPassword(userDto.getPassword());
@@ -58,6 +60,8 @@ public class UserServiceImpl implements UserService {
 				users.setCreatedby(userDto.getCreatedBy());
 				users.setUpdatedate(new Date());
 				updateUser = this.userRepo.save(users);
+			}else {
+				throw new ExistingProductFound(200,"Success","User already Exist","");
 			}
 			return this.userToUserDto(updateUser);
 		} else {

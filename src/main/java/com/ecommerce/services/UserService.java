@@ -5,12 +5,13 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 import com.ecommerce.entity.User;
+import com.ecommerce.enums.AppConstants;
 import com.ecommerce.payload.UserDto;
 
 
 public interface UserService {
 	
-	UserDto createUserOrUpdateUser(UserDto user);
+	UserDto createUserOrUpdateUser(UserDto user, AppConstants create);
 	
 //	UserDto updateUser(UserDto user,Long userId);
 	

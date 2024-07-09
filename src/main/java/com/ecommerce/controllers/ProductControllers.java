@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.ecommerce.entity.Product;
+import com.ecommerce.enums.AppConstants;
+import com.ecommerce.exceptions.ExistingProductFound;
 import com.ecommerce.requestPayload.ProductFilter;
 import com.ecommerce.requestPayload.ProductRequest;
 import com.ecommerce.responsePayload.ProductResponse;
@@ -51,7 +53,7 @@ public class ProductControllers {
 			Page<Product> products = productService.getAllProducts(page, size, filterBy, filterByValue, sortBy,
 					sortByValue);
 			ProductResponse response = new ProductResponse();
-			if (products != null && products.getContent().size()>0) {
+			if (products != null && products.getContent().size() > 0) {
 				response.setStatusCode(HttpStatus.OK.value());
 				response.setStatus("Success");
 				response.setProducts(products.getContent());
@@ -80,7 +82,7 @@ public class ProductControllers {
 			List<Product> products = productService.getAll();
 
 			ProductResponse response = new ProductResponse();
-			if (products != null ) {
+			if (products != null) {
 				response.setStatusCode(HttpStatus.OK.value());
 				response.setStatus("Success");
 				response.setProducts(products);
@@ -106,7 +108,7 @@ public class ProductControllers {
 
 		try {
 			ProductSaveResponse successResponse = new ProductSaveResponse();
-			ProductRequest products = productService.saveNewOrProduct(productRequest);
+			ProductRequest products = productService.saveNewOrProduct(productRequest, AppConstants.CREATE);
 
 			if (products != null || products.getId() > 0) {
 				successResponse.setStatus("Success");
@@ -120,6 +122,12 @@ public class ProductControllers {
 				successResponse.setErrorMessage("Something went wrong");
 			}
 			return new ResponseEntity<>(successResponse, HttpStatus.OK);
+		} catch (ExistingProductFound e) {
+			ProductSaveResponse errorResponse = new ProductSaveResponse();
+			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			errorResponse.setStatus("Error");
+			errorResponse.setErrorMessage("Failed to save user: " + e.getMessage());
+			return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
 			ProductSaveResponse errorResponse = new ProductSaveResponse();
 			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -129,14 +137,13 @@ public class ProductControllers {
 		}
 
 	}
-	
 
 	@PostMapping("/updateNewProducts")
 	public ResponseEntity<ProductSaveResponse> updateNewProducts(@RequestBody ProductRequest productRequest) {
 
 		try {
 			ProductSaveResponse successResponse = new ProductSaveResponse();
-			ProductRequest products = productService.saveNewOrProduct(productRequest);
+			ProductRequest products = productService.saveNewOrProduct(productRequest, AppConstants.UPDATE);
 
 			if (products != null || products.getId() > 0) {
 				successResponse.setStatus("Success");
@@ -174,12 +181,10 @@ public class ProductControllers {
 		}
 
 	}
-	
-	@GetMapping("/fetchProductById/{id}") 
+
+	@GetMapping("/fetchProductById/{id}")
 	public Product fetchById(@PathVariable("id") long id) {
 		return this.productService.fetchById(id);
 	}
-	
-	
-	
+
 }

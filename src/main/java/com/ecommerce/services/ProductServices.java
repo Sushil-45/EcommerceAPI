@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 import com.ecommerce.entity.Product;
+import com.ecommerce.enums.AppConstants;
 import com.ecommerce.payload.ProductDto;
 import com.ecommerce.requestPayload.ProductRequest;
 import com.ecommerce.responsePayload.ProductSaveResponse;
@@ -16,7 +17,7 @@ public interface ProductServices {
 
 	public List<Product> getAll();
 
-	public ProductRequest saveNewOrProduct(ProductRequest productRequest);
+	public ProductRequest saveNewOrProduct(ProductRequest productRequest, AppConstants create);
 
 //	public ProductRequest updateProduct(ProductRequest productRequest);
 

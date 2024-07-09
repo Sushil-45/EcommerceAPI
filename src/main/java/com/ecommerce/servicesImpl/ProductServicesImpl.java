@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import com.ecommerce.entity.Product;
 import com.ecommerce.entity.User;
+import com.ecommerce.enums.AppConstants;
+import com.ecommerce.exceptions.ExistingProductFound;
 import com.ecommerce.exceptions.ResourceNotFoundException;
 import com.ecommerce.exceptions.UserNotFoundException;
 import com.ecommerce.repositories.ProductRepository;
@@ -69,12 +71,12 @@ public class ProductServicesImpl implements ProductServices {
 	}
 
 	@Override
-	public ProductRequest saveNewOrProduct(ProductRequest productRequest) {
+	public ProductRequest saveNewOrProduct(ProductRequest productRequest,AppConstants create) {
 
 		if (productRequest.getId() != null) {
 			Optional<Product> optionalProduct = this.productRepository.findById(productRequest.getId());
 			Product saveNewProduct = new Product();
-			if (optionalProduct.isPresent()) {
+			if (optionalProduct.isPresent() && create.toString().equalsIgnoreCase("Update")) {
 				Product products = optionalProduct.get();
 				products.setProductDesc(productRequest.getProductDesc());
 				products.setProductName(productRequest.getProductName());
@@ -85,6 +87,8 @@ public class ProductServicesImpl implements ProductServices {
 				products.setUpdatedUserId(productRequest.getUserId());
 
 				saveNewProduct = this.productRepository.save(products);
+			}else {
+				throw new ExistingProductFound(200,"Success","Product already Exist","");
 			}
 			return this.productToDto(saveNewProduct);
 

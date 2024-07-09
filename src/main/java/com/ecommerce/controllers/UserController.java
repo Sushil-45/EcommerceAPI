@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.entity.User;
+import com.ecommerce.enums.AppConstants;
+import com.ecommerce.exceptions.ExistingProductFound;
 import com.ecommerce.payload.UserDto;
 import com.ecommerce.requestPayload.ProductFilter;
 import com.ecommerce.responsePayload.ProductSaveResponse;
@@ -45,7 +47,7 @@ public class UserController {
 //		return new ResponseEntity<>(createUser,HttpStatus.OK);
 		try {
 			ProductSaveResponse successResponse = new ProductSaveResponse();
-			UserDto createUser = this.userService.createUserOrUpdateUser(userDto);
+			UserDto createUser = this.userService.createUserOrUpdateUser(userDto,AppConstants.CREATE);
 			if (createUser != null || createUser.getId() > 0) {
 				successResponse.setStatus("Success");
 				successResponse.setStatusCode(HttpStatus.OK.value());
@@ -74,11 +76,11 @@ public class UserController {
 //		return new ResponseEntity<>(createUser,HttpStatus.OK);
 		try {
 			ProductSaveResponse successResponse = new ProductSaveResponse();
-			UserDto createUser = this.userService.createUserOrUpdateUser(userDto);
+			UserDto createUser = this.userService.createUserOrUpdateUser(userDto,AppConstants.UPDATE);
 			if (createUser != null || createUser.getId() > 0) {
 				successResponse.setStatus("Success");
 				successResponse.setStatusCode(HttpStatus.OK.value());
-				successResponse.setMessage("User save successfully Product Id : " + createUser.getId());
+				successResponse.setMessage("User save successfully user Id : " + createUser.getId());
 				successResponse.setErrorMessage("");
 			} else {
 				successResponse.setStatus("Error");
@@ -87,7 +89,13 @@ public class UserController {
 				successResponse.setErrorMessage("Something went wrong");
 			}
 			return new ResponseEntity<>(successResponse, HttpStatus.OK);
-		} catch (Exception e) {
+		} catch(ExistingProductFound e) {
+			ProductSaveResponse errorResponse = new ProductSaveResponse();
+			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
+			errorResponse.setStatus("Error");
+			errorResponse.setErrorMessage("Failed to save user: " + e.getMessage());
+			return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+		}catch (Exception e) {
 			ProductSaveResponse errorResponse = new ProductSaveResponse();
 			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
 			errorResponse.setStatus("Error");
@@ -174,7 +182,7 @@ public class UserController {
 			UserResponse errorResponse = new UserResponse();
 			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
 			errorResponse.setStatus("Error");
-			errorResponse.setErrorMessage("Failed to fetch products: " + e.getMessage());
+			errorResponse.setErrorMessage("Failed to fetch user: " + e.getMessage());
 			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 

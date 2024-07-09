@@ -8,7 +8,9 @@ public enum AppConstants {
 	
 	SUCCESS("success"),
 	EMPTY(""),
-	ERROR("Error");
+	ERROR("Error"),
+	CREATE("Create"),
+	UPDATE("Update");
 
 	AppConstants(String string) {
 		
