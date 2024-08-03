@@ -37,22 +37,20 @@ public class Utils {
 	}
 
 	public String fetchSortBy(String sortBy) {
-		
-		if(sortBy!=null && !sortBy.trim().isEmpty() && !sortBy.isEmpty()) {
+
+		if (sortBy != null && !sortBy.trim().isEmpty() && !sortBy.isEmpty()) {
 			return sortBy;
-		}
-		else {
+		} else {
 			return "id";
 		}
-		
+
 	}
 
 	public String fetchSortByAscDsc(String sortByValue) {
-		
-		if(sortByValue!=null && !sortByValue.trim().isEmpty() && !sortByValue.isEmpty()) {
+
+		if (sortByValue != null && !sortByValue.trim().isEmpty() && !sortByValue.isEmpty()) {
 			return sortByValue;
-		}
-		else {
+		} else {
 			return "asc";
 		}
 	}

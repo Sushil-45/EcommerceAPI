@@ -1,6 +1,5 @@
 package com.ecommerce.servicesImpl;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -13,18 +12,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ecommerce.entity.Product;
 import com.ecommerce.entity.Roles;
 import com.ecommerce.entity.User;
 import com.ecommerce.enums.AppConstants;
+import com.ecommerce.exceptions.DataNotFoundException;
 import com.ecommerce.exceptions.ExistingProductFound;
-import com.ecommerce.exceptions.ResourceNotFoundException;
-import com.ecommerce.exceptions.UserNotFoundException;
 import com.ecommerce.payload.UserDto;
 import com.ecommerce.repositories.UserRepo;
+import com.ecommerce.responsePayload.GenericResponseMessageBean;
 import com.ecommerce.services.UserService;
 
 @Service
@@ -41,35 +40,32 @@ public class UserServiceImpl implements UserService {
 	private ModelMapper modelMapper;
 
 	@Override
-	public UserDto createUserOrUpdateUser(UserDto userDto,AppConstants createOrUpdate) {
+	public UserDto createUserOrUpdateUser(UserDto userDto, AppConstants createOrUpdate) {
 
-		if (userDto.getId() != null) {
+		Optional<User> optionalUser = this.userRepo.findByUsername(userDto.getUserid());
 
-			Optional<User> optionalUser = this.userRepo.findById(userDto.getId());
-			User updateUser = new User();
-			if (optionalUser.isPresent() && createOrUpdate.toString().equalsIgnoreCase("update")) {
-				User users = optionalUser.get();
-				users.setEmail(userDto.getEmail());
-				users.setPassword(userDto.getPassword());
-				users.setFirstName(userDto.getFirstName());
-				users.setLastName(userDto.getLastName());
-//			users.setRoles(Arrays.asList(new Roles(userDto.getRoles())));
-				List<Roles> rolesSet = userDto.getRoles().stream().map(Roles::new).collect(Collectors.toList());
-				users.setRoles(rolesSet);
-				users.setEncpassword(passwordEncoder.encode(userDto.getPassword()));
-				users.setCreatedby(userDto.getCreatedBy());
-				users.setUpdatedate(new Date());
-				updateUser = this.userRepo.save(users);
-			}else {
-				throw new ExistingProductFound(200,"Success","User already Exist","");
-			}
-			return this.userToUserDto(updateUser);
-		} else {
+		if (optionalUser.isPresent() && createOrUpdate.toString().equalsIgnoreCase("update")) {
+			User user = new User();
+			User users = optionalUser.get();
+			users.setEmail(userDto.getEmail());
+			users.setPassword(userDto.getPassword());
+			users.setFirstName(userDto.getFirstName());
+			users.setLastName(userDto.getLastName());
+			List<Roles> rolesSet = userDto.getRoles().stream().map(Roles::new).collect(Collectors.toList());
+			users.setRoles(rolesSet);
+			users.setEncpassword(passwordEncoder.encode(userDto.getPassword()));
+			users.setCreatedby(userDto.getCreatedBy());
+			users.setUpdatedate(new Date());
+			user = this.userRepo.save(users);
+			return this.userToUserDto(user);
+		} else if (optionalUser.isEmpty() && createOrUpdate.toString().equalsIgnoreCase("create")) {
 			User user = this.dtoToUser(userDto);
 
 			User savedUser = this.userRepo.save(user);
 
 			return this.userToUserDto(savedUser);
+		} else {
+			throw new ExistingProductFound(200, "Success", "User already Exist", "");
 		}
 
 	}
@@ -95,8 +91,8 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDto getUserById(Long userId) {
 
-		User user = this.userRepo.findById(userId).orElseThrow(() -> new UserNotFoundException(200, "Error",
-				"User Not found with userid : " + userId, String.valueOf(userId)));
+		User user = this.userRepo.findById(userId).orElseThrow(() -> new DataNotFoundException(String.valueOf(HttpStatus.OK.value()), "Error",
+				"Product Not found with Productid : " + userId, String.valueOf(userId)));
 
 		return this.userToUserDto(user);
 	}
@@ -104,19 +100,29 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public List<User> getAllUsers() {
 		List<User> users = this.userRepo.findAll();
-
-//		List<UserDto> userDto = users.stream().map(user -> this.userToUserDto(user)).collect(Collectors.toList());
-
 		return users;
 	}
 
 	@Override
-	public void deleteUser(Long userId) {
-
-		User user = this.userRepo.findById(userId).orElseThrow(() -> new UserNotFoundException(200, "Error",
-				"User Not found with userid : " + userId, String.valueOf(userId)));
+	public GenericResponseMessageBean deleteUser(Long userId) {
 		
-		this.userRepo.delete(user);
+		try {
+			Optional<User> userDeletion = this.userRepo.findById(userId);
+			if (userDeletion.isPresent()) {
+				User user = userDeletion.get();
+				this.userRepo.delete(user);
+				return new GenericResponseMessageBean(String.valueOf(HttpStatus.OK.value()), "Success",
+						"User deleted successfully", null);
+			} else {
+				return new GenericResponseMessageBean(String.valueOf(HttpStatus.OK.value()), "Error",
+						"User not found with userId : " +userId, null);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new GenericResponseMessageBean(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()), "Error",
+					"Failed to delete user Something happened!! : " + e.getMessage(), null);
+		}
+
 
 	}
 

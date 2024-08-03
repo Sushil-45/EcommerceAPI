@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ecommerce.exceptions.ApiException;
 import com.ecommerce.payload.JwtAuthRequest;
+import com.ecommerce.responsePayload.GenericResponseMessageBean;
 import com.ecommerce.security.JwtAuthResponse;
 import com.ecommerce.security.JwtTokenHelper;
 import com.ecommerce.servicesImpl.CustomUsesrDetailService;
@@ -40,12 +41,13 @@ public class AuthController {
 	private AuthenticationManager authenticationManager;
 
 	@PostMapping("/login")
-	public ResponseEntity<JwtAuthResponse> createToken(@RequestBody JwtAuthRequest request) {
+	public ResponseEntity<GenericResponseMessageBean> createToken(@RequestBody JwtAuthRequest request) {
 
 		JwtAuthResponse response = new JwtAuthResponse();
+		
 		MyUserDetails ud = new MyUserDetails();
 		try {
-
+			GenericResponseMessageBean successResponse = new GenericResponseMessageBean();
 			this.authenticate(request.getUsername(), request.getPassword());
 
 			UserDetails userDetails = this.customUserDetailService.loadUserByUsername(request.getUsername());
@@ -56,23 +58,32 @@ public class AuthController {
 
 			response.setToken(token);
 			response.setUserId(ud.getUsername());
-			response.setErrorMessage("");
-			response.setStatus("Success");
-			response.setStatusCode(200)
-;			List<String> authorityNames = ud.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+//			response.setErrorMessage("");
+//			response.setStatus("Success");
+//			response.setStatusCode(200);
+			List<String> authorityNames = ud.getAuthorities().stream().map(GrantedAuthority::getAuthority)
 					.collect(Collectors.toList());
 			response.setRoles(authorityNames);
-
 			
+			successResponse.setData(response);
+			successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+			successResponse.setResult("Success");
+			successResponse.setResponseMessage("Success");
+			return new ResponseEntity<GenericResponseMessageBean>(successResponse, HttpStatus.OK);
 		} catch (Exception e) {
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
 			response.setToken("");
 			response.setUserId(ud.getUsername());
-			response.setErrorMessage(e.getMessage());
-			response.setStatus("Error");
-			response.setStatusCode(200);
-
+//			response.setErrorMessage(e.getMessage());
+//			response.setStatus("Error");
+//			response.setStatusCode(200);
+			errorResponse.setData(response);
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+			errorResponse.setResult("Success");
+			errorResponse.setResponseMessage("Success");
+			return new ResponseEntity<GenericResponseMessageBean>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return new ResponseEntity<JwtAuthResponse>(response, HttpStatus.OK);
+		
 	}
 
 	private void authenticate(String username, String password) {

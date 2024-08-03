@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import com.ecommerce.entity.User;
 import com.ecommerce.enums.AppConstants;
 import com.ecommerce.payload.UserDto;
+import com.ecommerce.responsePayload.GenericResponseMessageBean;
 
 
 public interface UserService {
@@ -20,7 +21,7 @@ public interface UserService {
 //	List<UserDto> getAllUsers();
 	List<User> getAllUsers();
 
-	void deleteUser(Long userId);
+	GenericResponseMessageBean deleteUser(Long userId);
 
 	Page<User> getAllUsers(int page, int size, String filterBy, String filterByValue, String sortBy,
 			String sortByValue);

@@ -23,6 +23,7 @@ import com.ecommerce.enums.AppConstants;
 import com.ecommerce.exceptions.ExistingProductFound;
 import com.ecommerce.payload.UserDto;
 import com.ecommerce.requestPayload.ProductFilter;
+import com.ecommerce.responsePayload.GenericResponseMessageBean;
 import com.ecommerce.responsePayload.ProductSaveResponse;
 import com.ecommerce.responsePayload.UserResponse;
 import com.ecommerce.services.UserService;
@@ -41,102 +42,111 @@ public class UserController {
 	private Utils utils;
 	
 	@PostMapping("/saveNew")
-	public ResponseEntity<ProductSaveResponse> createUser(@RequestBody UserDto userDto){
-		
-//		UserDto createUser = this.userService.createUserOrUpdateUser(userDto);
-//		return new ResponseEntity<>(createUser,HttpStatus.OK);
+	public ResponseEntity<GenericResponseMessageBean> createUser(@RequestBody UserDto userDto){
 		try {
-			ProductSaveResponse successResponse = new ProductSaveResponse();
+			GenericResponseMessageBean successResponse = new GenericResponseMessageBean();
 			UserDto createUser = this.userService.createUserOrUpdateUser(userDto,AppConstants.CREATE);
 			if (createUser != null || createUser.getId() > 0) {
-				successResponse.setStatus("Success");
-				successResponse.setStatusCode(HttpStatus.OK.value());
-				successResponse.setMessage("User save successfully Product Id : " + createUser.getId());
-				successResponse.setErrorMessage("");
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Success");
+				successResponse.setResponseMessage("User save successfully user Id  : " + createUser.getId());
+				successResponse.setData("");
 			} else {
-				successResponse.setStatus("Error");
-				successResponse.setStatusCode(HttpStatus.OK.value());
-				successResponse.setMessage("Something went wrong");
-				successResponse.setErrorMessage("Something went wrong");
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Error");
+				successResponse.setResponseMessage("Something happened failed to save Data");
+				successResponse.setData("");
 			}
 			return new ResponseEntity<>(successResponse, HttpStatus.OK);
+		}catch(ExistingProductFound e) {
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.BAD_REQUEST.value()));
+			errorResponse.setResult("Error");
+			errorResponse.setResponseMessage("Failed to save user as : " + e.getMessage());
+			return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
-			ProductSaveResponse errorResponse = new ProductSaveResponse();
-			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			errorResponse.setStatus("Error");
-			errorResponse.setErrorMessage("Failed to save user: " + e.getMessage());
+			e.printStackTrace();
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+			errorResponse.setResult("Error");
+			errorResponse.setResponseMessage("Failed to save user: " + e.getMessage());
+			errorResponse.setData("");
 			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 	}
 	
 	@PutMapping("/updateUser")
-	public  ResponseEntity<ProductSaveResponse> updateUser(@RequestBody UserDto userDto){
-//		UserDto createUser = this.userService.createUserOrUpdateUser(userDto);
-//		return new ResponseEntity<>(createUser,HttpStatus.OK);
+	public  ResponseEntity<GenericResponseMessageBean> updateUser(@RequestBody UserDto userDto){
 		try {
-			ProductSaveResponse successResponse = new ProductSaveResponse();
+			GenericResponseMessageBean successResponse = new GenericResponseMessageBean();
 			UserDto createUser = this.userService.createUserOrUpdateUser(userDto,AppConstants.UPDATE);
 			if (createUser != null || createUser.getId() > 0) {
-				successResponse.setStatus("Success");
-				successResponse.setStatusCode(HttpStatus.OK.value());
-				successResponse.setMessage("User save successfully user Id : " + createUser.getId());
-				successResponse.setErrorMessage("");
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Success");
+				successResponse.setResponseMessage("User updated successfully user Id  : " + createUser.getId());
+				successResponse.setData("");
 			} else {
-				successResponse.setStatus("Error");
-				successResponse.setStatusCode(HttpStatus.OK.value());
-				successResponse.setMessage("Something went wrong");
-				successResponse.setErrorMessage("Something went wrong");
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Error");
+				successResponse.setResponseMessage("Something happened failed to update Data");
+				successResponse.setData("");
 			}
 			return new ResponseEntity<>(successResponse, HttpStatus.OK);
-		} catch(ExistingProductFound e) {
-			ProductSaveResponse errorResponse = new ProductSaveResponse();
-			errorResponse.setStatusCode(HttpStatus.BAD_REQUEST.value());
-			errorResponse.setStatus("Error");
-			errorResponse.setErrorMessage("Failed to save user: " + e.getMessage());
-			return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-		}catch (Exception e) {
-			ProductSaveResponse errorResponse = new ProductSaveResponse();
-			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			errorResponse.setStatus("Error");
-			errorResponse.setErrorMessage("Failed to save user: " + e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+			errorResponse.setResult("Error");
+			errorResponse.setResponseMessage("Failed to save user: " + e.getMessage());
+			errorResponse.setData("");
 			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
 	}
 	
 	
-	@SuppressWarnings("unchecked")
 	@DeleteMapping("/deleteUser/{userId}")
-	public ResponseEntity<?> deleteUser( @PathVariable Long userId){
-		this.userService.deleteUser(userId);
-		return new ResponseEntity(Map.of("user","Usesr deleted successfully"),HttpStatus.OK);
+	public ResponseEntity<GenericResponseMessageBean> deleteUser( @PathVariable Long userId){
+		
+		try {
+			GenericResponseMessageBean products = this.userService.deleteUser(userId);
+
+			return new ResponseEntity<>(products, HttpStatus.OK);
+		} catch (Exception e) {
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+					"Error", "Failed to delete user", e.getMessage());
+
+			return new ResponseEntity<>(errorResponse, HttpStatus.OK);
+		}
+		
 	}
 	
 	@GetMapping("/")
-	public ResponseEntity<UserResponse> getAllUsers(){
-//		return ResponseEntity.ok(this.userService.getAllUsers());
+	public ResponseEntity<GenericResponseMessageBean> getAllUsers(){
 		try {
-
 			List<User> users = this.userService.getAllUsers();
 
-			UserResponse response = new UserResponse();
+			GenericResponseMessageBean successResponse = new GenericResponseMessageBean();
 			if (users != null) {
-				response.setStatusCode(HttpStatus.OK.value());
-				response.setStatus("Success");
-				response.setUsers(users);
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Success");
+				successResponse.setResponseMessage("User Data Fetch Successfully");
+				successResponse.setData(users);
 			} else {
-				response.setStatusCode(HttpStatus.OK.value());
-				response.setStatus("Success");
-				response.setErrorMessage("Data is empty");
-				response.setUsers(new ArrayList<>());
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Error");
+				successResponse.setResponseMessage("Data is Empty !!!");
+				successResponse.setData(new ArrayList<>());
 			}
-			return new ResponseEntity<>(response, HttpStatus.OK);
+			return new ResponseEntity<>(successResponse, HttpStatus.OK);
 		} catch (Exception e) {
-			UserResponse errorResponse = new UserResponse();
-			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			errorResponse.setStatus("Error");
-			errorResponse.setErrorMessage("Failed to fetch products: " + e.getMessage());
+			e.printStackTrace();
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+			errorResponse.setResult("Error");
+			errorResponse.setResponseMessage("Failed to fetch users: " + e.getMessage());
+			errorResponse.setData("");
 			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
@@ -144,12 +154,38 @@ public class UserController {
 
 	
 	@GetMapping("/findById/{userId}")
-	public ResponseEntity<UserDto> getUserByUserId(@PathVariable Long userId){
-		return ResponseEntity.ok(this.userService.getUserById(userId));
+	public ResponseEntity<GenericResponseMessageBean> getUserByUserId(@PathVariable Long userId){
+		try {
+			
+			UserDto users = this.userService.getUserById(userId);
+			
+			GenericResponseMessageBean successResponse = new GenericResponseMessageBean();
+			if (users != null) {
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Success");
+				successResponse.setResponseMessage("User Data Fetch Successfully");
+				successResponse.setData(users);
+			} else {
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Error");
+				successResponse.setResponseMessage("Data is Empty !!!");
+				successResponse.setData(new ArrayList<>());
+			}
+			return new ResponseEntity<>(successResponse, HttpStatus.OK);
+		}catch (Exception e) {
+			e.printStackTrace();
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+			errorResponse.setResult("Error");
+			errorResponse.setResponseMessage("Failed to fetch users: " + e.getMessage());
+			errorResponse.setData("");
+			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
 	}
 	
 	@PostMapping("/getAllUsers")
-	public ResponseEntity<UserResponse> getAllUsers(@RequestBody ProductFilter productFilter) {
+	public ResponseEntity<GenericResponseMessageBean> getAllUsers(@RequestBody ProductFilter productFilter) {
 		try {
 			int page = utils.fetchPages(productFilter.getPage());
 
@@ -164,27 +200,31 @@ public class UserController {
 				filterByValue = utils.fetchFilterBy(productFilter.getFilterByValue());
 			}
 
-			Page<User> products = userService.getAllUsers(page, size, filterBy, filterByValue, sortBy,
+			Page<User> users = userService.getAllUsers(page, size, filterBy, filterByValue, sortBy,
 					sortByValue);
-			UserResponse response = new UserResponse();
-			if (products != null && products.getContent().size()>0) {
-				response.setStatusCode(HttpStatus.OK.value());
-				response.setStatus("Success");
-				response.setUsers(products.getContent());
+			GenericResponseMessageBean successResponse = new GenericResponseMessageBean();
+			if (users != null) {
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Success");
+				successResponse.setResponseMessage("User Data Fetch Successfully");
+				successResponse.setData(users);
 			} else {
-				response.setStatusCode(HttpStatus.OK.value());
-				response.setStatus("Success");
-				response.setErrorMessage("Data is empty");
-				response.setUsers(new ArrayList<>());
+				successResponse.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				successResponse.setResult("Error");
+				successResponse.setResponseMessage("Data is Empty !!!");
+				successResponse.setData(new ArrayList<>());
 			}
-			return new ResponseEntity<>(response, HttpStatus.OK);
+			return new ResponseEntity<>(successResponse, HttpStatus.OK);
 		} catch (Exception e) {
-			UserResponse errorResponse = new UserResponse();
-			errorResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-			errorResponse.setStatus("Error");
-			errorResponse.setErrorMessage("Failed to fetch user: " + e.getMessage());
+			e.printStackTrace();
+			GenericResponseMessageBean errorResponse = new GenericResponseMessageBean();
+			errorResponse.setResponseCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+			errorResponse.setResult("Error");
+			errorResponse.setResponseMessage("Failed to fetch users: " + e.getMessage());
+			errorResponse.setData("");
 			return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+
 
 	}
 }

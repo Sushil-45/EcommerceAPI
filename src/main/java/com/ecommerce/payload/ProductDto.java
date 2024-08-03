@@ -1,6 +1,5 @@
 package com.ecommerce.payload;
 
-import com.ecommerce.entity.Product;
 
 public class ProductDto {
 

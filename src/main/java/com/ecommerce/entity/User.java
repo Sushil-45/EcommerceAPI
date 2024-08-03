@@ -2,7 +2,6 @@ package com.ecommerce.entity;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

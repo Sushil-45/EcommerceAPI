@@ -30,13 +30,13 @@ import com.ecommerce.servicesImpl.CustomUsesrDetailService;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class WebSecurityConfig {
-	
+
 	@Value("${swagger.url}")
 	private String ignoreList;
-	
+
 	@Autowired
 	private CustomUsesrDetailService customeUserDetailService;
-	
+
 	@Autowired
 	private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
@@ -45,43 +45,36 @@ public class WebSecurityConfig {
 		return new JwtAuthenticationFilter();
 	}
 
-	
 //	private static final String[] swaggerUrl = {"/swagger-ui/**","/v3/api-docs/**","/swagger-resources/**","/swagger-resources"};
-	
-	
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-	    http.csrf(csrf -> csrf.disable())
-	        .exceptionHandling(exception -> exception.authenticationEntryPoint(this.jwtAuthenticationEntryPoint))
-	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	        .authorizeHttpRequests(auth -> auth	
-	            .requestMatchers("/api/v1/auth/login").permitAll()  
-	            .requestMatchers("/api/users/saveNew","/favicon.io").permitAll()
-	            .anyRequest().authenticated()
-	        )
-	        .authenticationProvider(authenticationProvider())
-	        .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+		http.csrf(csrf -> csrf.disable())
+				.exceptionHandling(exception -> exception.authenticationEntryPoint(this.jwtAuthenticationEntryPoint))
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/login").permitAll()
+						.requestMatchers("/api/users/saveNew", "/favicon.io").permitAll().anyRequest().authenticated())
+				.authenticationProvider(authenticationProvider())
+				.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
-	    return http.build();
+		return http.build();
 	}
 
-	
-	 @Bean
-	  public DaoAuthenticationProvider authenticationProvider() {
-	      DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-	       
-	      authProvider.setUserDetailsService(customeUserDetailService);
-	      authProvider.setPasswordEncoder(passwordEncoder());
-	   
-	      return authProvider;
-	  }
-	
+	@Bean
+	public DaoAuthenticationProvider authenticationProvider() {
+		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+
+		authProvider.setUserDetailsService(customeUserDetailService);
+		authProvider.setPasswordEncoder(passwordEncoder());
+
+		return authProvider;
+	}
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
-	
 	@Bean
 	public AuthenticationManager authenticationManagerBean(AuthenticationConfiguration authConfig) throws Exception {
 		return authConfig.getAuthenticationManager();
@@ -91,14 +84,12 @@ public class WebSecurityConfig {
 	public WebSecurityCustomizer webSecurityCustomizer() {
 		List<RequestMatcher> requestMatcher = new ArrayList<>();
 		String[] split = ignoreList.split(",");
-		
-		for(String urlToIgnore : split) {
+
+		for (String urlToIgnore : split) {
 			requestMatcher.add(new AntPathRequestMatcher(urlToIgnore));
 		}
-		
-		return (web) ->requestMatcher.stream()
-				.forEach(i -> web.ignoring().requestMatchers(i));
+
+		return (web) -> requestMatcher.stream().forEach(i -> web.ignoring().requestMatchers(i));
 	}
-	
-	
+
 }

@@ -8,6 +8,7 @@ import com.ecommerce.entity.Product;
 import com.ecommerce.enums.AppConstants;
 import com.ecommerce.payload.ProductDto;
 import com.ecommerce.requestPayload.ProductRequest;
+import com.ecommerce.responsePayload.GenericResponseMessageBean;
 import com.ecommerce.responsePayload.ProductSaveResponse;
 
 public interface ProductServices {
@@ -19,13 +20,11 @@ public interface ProductServices {
 
 	public ProductRequest saveNewOrProduct(ProductRequest productRequest, AppConstants create);
 
-//	public ProductRequest updateProduct(ProductRequest productRequest);
-
-	public Product fetchById(long id);
+	public GenericResponseMessageBean fetchById(long id);
 
 	public List<Product> getProductsByFilter(String fetchFilterBy, String fetchFilterByValue);
 
-	public ProductSaveResponse deleteProduct(long id);
+	public GenericResponseMessageBean deleteProduct(long id);
 
 
 }

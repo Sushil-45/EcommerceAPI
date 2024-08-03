@@ -8,6 +8,7 @@ public class ProductFilter {
 	private String filterByValue;
 	private String sortBy;
 	private String sortByValue;
+	
 	public ProductFilter(Integer page, Integer size, String filterBy, String filterByValue, String sortBy, String sortByValue) {
 		super();
 		this.page = page;

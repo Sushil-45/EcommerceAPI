@@ -62,12 +62,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 					username = this.jwtTokenHelper.extractUsername(token);
 				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
 					handleTokenUnavailableException(response, "Unable to get Token: " + e.getMessage());
 					return;
 				} catch (ExpiredJwtException e) {
+					e.printStackTrace();
 					handleExpiredTokenException(response, "Expired token: " + e.getMessage());
 					return;
 				} catch (MalformedJwtException e) {
+					e.printStackTrace();
 					handleInvalidTokenException(response, "Invalid token: " + e.getMessage());
 					return;
 				}
@@ -75,8 +78,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			} else {
 				System.out.println("Token not begin with Bearer");
 			}
-
-			// Validation after fetching token
 
 			if (username != null && !username.isEmpty()
 					&& SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -102,6 +103,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 			filterChain.doFilter(request, response);
 		} catch (Exception e) {
+			e.printStackTrace();
 			handleInvalidTokenException(response, "Error details :" + e.getMessage());
 			return;
 		}
@@ -110,23 +112,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private void handleTokenUnavailableException(HttpServletResponse response, String errorMessage) throws IOException {
 		response.setStatus(HttpStatus.BAD_REQUEST.value());
 		response.setContentType("application/json");
-		response.getWriter().write("{\"path\":\"/error\" ,  \"status\":\"" + HttpStatus.UNAUTHORIZED.value()
-				+ "\" ,   \"error\": \"" + errorMessage + "\" , \"message\" :\"" + errorMessage + "\"}");
+//		response.getWriter().write("{\"path\":\"/error\" ,  \"status\":\"" + HttpStatus.UNAUTHORIZED.value()
+//				+ "\" ,   \"error\": \"" + errorMessage + "\" , \"message\" :\"" + errorMessage + "\"}");
+		response.getWriter().write("{\"responseCode\":\""+ HttpStatus.UNAUTHORIZED.value()+"\" , \"responseMessage\":\""+ errorMessage+"\" ,"
+				+ " \"result\":\" Error \" , \"data\": \" \", \"id\":\"\"}");
+
 
 	}
 
 	private void handleExpiredTokenException(HttpServletResponse response, String errorMessage) throws IOException {
 		response.setStatus(HttpStatus.UNAUTHORIZED.value());
 		response.setContentType("application/json");
-		response.getWriter().write("{\"path\":\"/error\" ,  \"status\":\"" + HttpStatus.UNAUTHORIZED.value()
-				+ "\" ,   \"error\": \"" + errorMessage + "\" , \"message\" :\"" + errorMessage + "\"}");
+		response.getWriter().write("{\"responseCode\":\""+ HttpStatus.UNAUTHORIZED.value()+"\" , \"responseMessage\":\""+ errorMessage+"\" ,"
+				+ " \"result\":\" Error \" , \"data\": \" \", \"id\":\"\"}");
 	}
 
 	private void handleInvalidTokenException(HttpServletResponse response, String errorMessage) throws IOException {
 		response.setStatus(HttpStatus.BAD_REQUEST.value());
 		response.setContentType("application/json");
-		response.getWriter().write("{\"path\":\"/error\" ,  \"status\":\"" + HttpStatus.UNAUTHORIZED.value()
-				+ "\" ,   \"error\": \"" + errorMessage + "\" , \"message\" :\"" + errorMessage + "\"}");
+		response.getWriter().write("{\"responseCode\":\""+ HttpStatus.UNAUTHORIZED.value()+"\" , \"responseMessage\":\""+ errorMessage+"\" ,"
+				+ " \"result\":\" Error \" , \"data\": \" \", \"id\":\"\"}");
 
 	}
 

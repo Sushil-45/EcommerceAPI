@@ -2,7 +2,6 @@ package com.ecommerce.servicesImpl;
 
 import java.util.Date;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,14 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.entity.Product;
-import com.ecommerce.entity.User;
 import com.ecommerce.enums.AppConstants;
+import com.ecommerce.exceptions.DataNotFoundException;
 import com.ecommerce.exceptions.ExistingProductFound;
-import com.ecommerce.exceptions.ResourceNotFoundException;
-import com.ecommerce.exceptions.UserNotFoundException;
 import com.ecommerce.repositories.ProductRepository;
 import com.ecommerce.requestPayload.ProductRequest;
-import com.ecommerce.responsePayload.ProductSaveResponse;
+import com.ecommerce.responsePayload.GenericResponseMessageBean;
 import com.ecommerce.services.ProductServices;
 
 @Service
@@ -34,44 +31,35 @@ public class ProductServicesImpl implements ProductServices {
 	@Override
 	public Page<Product> getAllProducts(int page, int size, String filterBy, String filterByValue, String sortBy,
 			String sortByValue) {
-//		try {
-			Pageable pageable;
-			if (sortBy != null && sortByValue != null) {
-				Sort sort = sortByValue.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
-						: Sort.by(sortBy).descending();
-				pageable = PageRequest.of(page, size, sort);
+		Pageable pageable;
+		if (sortBy != null && sortByValue != null) {
+			Sort sort = sortByValue.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending()
+					: Sort.by(sortBy).descending();
+			pageable = PageRequest.of(page, size, sort);
+		} else {
+			pageable = PageRequest.of(page, size);
+		}
+
+		Specification<Product> spec = Specification.where(null);
+		if (filterBy != null) {
+			if (filterByValue != null && !filterByValue.trim().isEmpty() && !filterByValue.isEmpty()) {
+				spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get(filterBy)),
+						"%" + filterByValue.toLowerCase() + "%"));
 			} else {
-				pageable = PageRequest.of(page, size);
+				spec = spec.and((root, query, cb) -> cb.isNotNull(root.get(filterBy)));
 			}
+		}
 
-			Specification<Product> spec = Specification.where(null);
-			if (filterBy != null) {
-				if (filterByValue != null && !filterByValue.trim().isEmpty() && !filterByValue.isEmpty()) {
-			        spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get(filterBy)), "%" + filterByValue.toLowerCase() + "%"));
-			    } else {
-			        spec = spec.and((root, query, cb) -> cb.isNotNull(root.get(filterBy)));
-			    }
-			}
-
-			return productRepository.findAll(spec, pageable);
-//		} catch (IllegalArgumentException | NoSuchElementException e) {
-//			throw e;
-//		} catch (Exception e) {
-//			throw new RuntimeException("Failed to fetch products", e);
-//		}
+		return productRepository.findAll(spec, pageable);
 	}
 
 	@Override
 	public List<Product> getAll() {
-		try {
-			return productRepository.findAll();
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to fetch products", e);
-		}
+		return productRepository.findAll();
 	}
 
 	@Override
-	public ProductRequest saveNewOrProduct(ProductRequest productRequest,AppConstants create) {
+	public ProductRequest saveNewOrProduct(ProductRequest productRequest, AppConstants create) {
 
 		if (productRequest.getId() != null) {
 			Optional<Product> optionalProduct = this.productRepository.findById(productRequest.getId());
@@ -87,8 +75,8 @@ public class ProductServicesImpl implements ProductServices {
 				products.setUpdatedUserId(productRequest.getUserId());
 
 				saveNewProduct = this.productRepository.save(products);
-			}else {
-				throw new ExistingProductFound(200,"Success","Product already Exist","");
+			} else {
+				throw new ExistingProductFound(200, "Success", "Product already Exist", "");
 			}
 			return this.productToDto(saveNewProduct);
 
@@ -134,15 +122,32 @@ public class ProductServicesImpl implements ProductServices {
 //	}
 
 	@Override
-	public Product fetchById(long id) {
+	public GenericResponseMessageBean fetchById(long id) {
+		try {
+			GenericResponseMessageBean response = new GenericResponseMessageBean();
 
-//		Product product = this.productRepository.findById(id)
-//				.orElseThrow(() -> new ResourceNotFoundException("Product ", " Id ", id));
+			Product product = this.productRepository.findById(id)
+					.orElseThrow(() -> new DataNotFoundException(String.valueOf(HttpStatus.OK.value()), "Error",
+							"Product Not found with Productid : " + id, String.valueOf(id)));
 
-		Product product = this.productRepository.findById(id).orElseThrow(() -> new UserNotFoundException(200, "Error",
-				"Product Not found with Productid : " + id, String.valueOf(id)));
+			if (product != null) {
+				response.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				response.setResponseMessage("Succesfully fetched data for product : " + id);
+				response.setResult("Success");
+				response.setData(product);
+			} else {
+				response.setResponseCode(String.valueOf(HttpStatus.OK.value()));
+				response.setResponseMessage("Data Not Found with Product ID : " + id);
+				response.setResult("Error");
+				response.setData(product);
+			}
 
-		return product;
+			return response;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new GenericResponseMessageBean(String.valueOf(HttpStatus.OK.value()), "Error",
+					"Failed to find product something happened!!! : " + e.getMessage(), null);
+		}
 	}
 
 	@Override
@@ -168,19 +173,22 @@ public class ProductServicesImpl implements ProductServices {
 	}
 
 	@Override
-	public ProductSaveResponse deleteProduct(long id) {
+	public GenericResponseMessageBean deleteProduct(long id) {
 		try {
 			Optional<Product> productOptional = productRepository.findById(id);
 			if (productOptional.isPresent()) {
 				Product product = productOptional.get();
 				productRepository.delete(product);
-				return new ProductSaveResponse(HttpStatus.OK.value(), "Success", "Product deleted successfully", null);
+				return new GenericResponseMessageBean(String.valueOf(HttpStatus.OK.value()), "Success",
+						"Product deleted successfully", null);
 			} else {
-				return new ProductSaveResponse(HttpStatus.NOT_FOUND.value(), "Error", "Product not found", null);
+				return new GenericResponseMessageBean(String.valueOf(HttpStatus.OK.value()), "Error",
+						"Product not found", null);
 			}
 		} catch (Exception e) {
-			return new ProductSaveResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error",
-					"Failed to delete product", e.getMessage());
+			e.printStackTrace();
+			return new GenericResponseMessageBean(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()), "Error",
+					"Failed to delete product Something happened!! : " + e.getMessage(), null);
 		}
 	}
 
